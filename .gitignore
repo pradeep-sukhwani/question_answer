@@ -1,0 +1,13 @@
+# Idea
+.idea/
+
+# settings files
+local_settings.py
+production.py
+
+# Mac
+.DS_Store
+._*
+
+# python cache files
+*.pyc
