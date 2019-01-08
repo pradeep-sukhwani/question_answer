@@ -6,8 +6,6 @@
     <base href="/">
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
@@ -21,37 +19,42 @@
     {% endblock %}
 </head>
 <body>
-{% if user.user.is_authenticated %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="{% url 'api:profile' %}"><img id="brand" src="{% static 'img/logo.jpg' %}"></a>
+        <a class="navbar-brand" href="{% url 'api:page' %}"><img id="brand" src="{% static 'img/logo.jpg' %}"></a>
         <div class="container">
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01"
                     aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
-                <ul class="navbar-nav mr-auto mt-2 mt-lg-0"></ul>
+                <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                    <li><a class="nav-link" href="{% url 'api:page' %}?addNQ=true">Add a New Question</a></li>
+                </ul>
+
                 <form id="searchForm" class="form-inline my-4 my-lg-0">
                     <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
                 </form>
-
-                <ul class="navbar-nav ">
-                    <li class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" id="navDropDownLink" data-toggle="dropdown"
-                           aria-haspopup="true" aria-expanded="false"><img src="{{ user.avatar.url }}" id="profile-img">  <span>{{ user.user.username }}</span></a>
-                        <div class="dropdown-menu" aria-labelledby="navDropDownLink">
-                            <a class="dropdown-item" href="#">Profile</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'api:user-logout' %}">Logout</a>
-                        </div>
-                    </li>
-                </ul>
-
+                {% if user.user.is_authenticated %}
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" id="navDropDownLink" data-toggle="dropdown"
+                               aria-haspopup="true" aria-expanded="false"><img src="{{ user.avatar.url }}" id="profile-img">  <span>{{ user.user.username }}</span></a>
+                            <div class="dropdown-menu" aria-labelledby="navDropDownLink">
+                                <a class="dropdown-item" href="#">Profile</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'api:user-logout' %}">Logout</a>
+                            </div>
+                        </li>
+                    </ul>
+                {% else %}
+                    <ul class="navbar-nav">
+                        <li><a href="{% url 'api:page' %}?login-signup=true" class="nav-link">Login/Sign Up</a></li>
+                    </ul>
+                {% endif %}
             </div>
         </div>
     </nav>
-{% endif %}
 {% block body %}{% endblock %}
 <p class="mt-5 mb-3 text-muted" style="text-align: center;">Source Code - <a
         href="https://github.com/pssukhwani/todo_list" target="_blank">GitHub</a></p>
