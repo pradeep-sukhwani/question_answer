@@ -11,3 +11,9 @@ production.py
 
 # python cache files
 *.pyc
+
+# Media Files
+media/
+
+# static Files
+assets/
