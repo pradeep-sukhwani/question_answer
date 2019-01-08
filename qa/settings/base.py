@@ -42,12 +42,16 @@ DJANGO_APPS = [
 # Django libraries will go here
 
 THIRD_PART_APPS = [
+    'django_extensions',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 # Apps specific for this project go here.
 
 LOCAL_APPS = [
     'core',
+    'api',
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -70,7 +74,7 @@ ROOT_URLCONF = 'qa.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
+        'DIRS': [os.path.join(BASE_DIR, '../templates')]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -133,10 +137,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
-
-STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'assets')
 
+STATIC_URL = '/static/'
+
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static/'),
+    os.path.join(BASE_DIR, '../static/'),
 )
+
+MEDIA_ROOT = os.path.join(BASE_DIR, '../media/')
+MEDIA_URL = '/media/'
