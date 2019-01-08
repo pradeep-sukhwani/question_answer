@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+{% block title %} Home {% endblock %}
+
+{% block body %}
+    <div class="container">
+        {% for question in questions %}
+            <div class="row">
+                <div class="col col-md-6">
+                    {{ question.title }}
+                    {{ question.question }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
