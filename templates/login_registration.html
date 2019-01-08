@@ -1,16 +1,13 @@
 {% extends 'index.html' %}
 {% load static %}
-{% comment %}
-    Login/Registration template source: https://bootsnipp.com/snippets/featured/login-and-register-tabbed-form
-{% endcomment %}
 {% block title %}
-    Login
+    Login/Sign up
 {% endblock %}
 {% block css %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="{% static 'css/login_registration.css' %}">
 {% endblock %}
 {% block body %}
+    <br>
     <div class="container">
         <div class="row">
             <div class="col-md-6 col-md-offset-3">
@@ -21,7 +18,7 @@
                                 <a href="#" id="login-form-link" class="active">Login</a>
                             </div>
                             <div class="col-xs-6">
-								<a href="#" id="register-form-link">Register</a>
+								<a href="#" id="register-form-link">Sign Up</a>
 							</div>
                         </div>
                         <hr>
@@ -57,7 +54,7 @@
 									<div class="form-group">
 										<div class="row">
 											<div class="col-sm-6 col-sm-offset-3">
-												<input type="submit" name="register-submit" id="register-submit" tabindex="4" class="form-control btn btn-register" value="Register Now">
+												<input type="submit" name="register-submit" id="register-submit" tabindex="4" class="form-control btn btn-register" value="Sign Up">
 											</div>
 										</div>
 									</div>
