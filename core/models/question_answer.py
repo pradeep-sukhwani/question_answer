@@ -10,7 +10,7 @@ class Question(TimeStampedModel):
                                  related_name='question_tag')
     asked_by = models.OneToOneField("Profile", on_delete=models.SET_NULL, null=True, related_name='question_asked_by')
     rating = models.IntegerField("Up-vote/Down-vote", default=0)
-    reputation = models.IntegerField("Reputation", default=0)
+    reputation = models.IntegerField("Reputation", default=1)
 
     def __str__(self):
         return 'u{id}_{title}'.format(id=self.id, title=self.title)
@@ -21,7 +21,9 @@ class Answer(TimeStampedModel):
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='answer_parent',
                                help_text='User can reply on the answer as well')
     answer_by = models.OneToOneField("Profile", on_delete=models.SET_NULL, null=True, related_name='answer_answer_by')
+    rating = models.IntegerField("Up-vote/Down-vote", default=0)
     accepted_or_not = models.BooleanField(default=False, help_text='User can accept the answer')
+    favourite = models.BooleanField(default=False, help_text='User can like the answer')
 
     def __str__(self):
         if self.answer_by.user:
