@@ -152,7 +152,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     personal_website = serializers.CharField()
     twitter_username = serializers.CharField()
     github_username = serializers.CharField()
-    user = serializers.PrimaryKeyRelatedField(required=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Profile
