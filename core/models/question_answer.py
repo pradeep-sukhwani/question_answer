@@ -23,5 +23,7 @@ class Answer(TimeStampedModel):
     answer_by = models.OneToOneField("Profile", on_delete=models.SET_NULL, null=True, related_name='answer_answer_by')
     accepted_or_not = models.BooleanField(default=False, help_text='User can accept the answer')
 
-    # def __str__(self):
-    #     return 'u{id}_{user_name}'.format(id=self.id, user_name=self.answer_by.user.username)
+    def __str__(self):
+        if self.answer_by.user:
+            return 'u{id}_{user_name}'.format(id=self.id, user_name=self.answer_by.user.username)
+        return 'u{id}'.format(id=self.id)

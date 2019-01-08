@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('github_username',
                  models.CharField(blank=True, help_text=b'Github username', max_length=100, null=True)),
                 ('avatar', models.ImageField(blank=True, help_text=b"User's profile pic", null=True,
-                                             upload_to=core.models.user_profile.get_image_path)),
+                                             upload_to=core.models.user_profile.get_upload_path)),
                 (
                 'user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
