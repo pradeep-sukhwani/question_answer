@@ -139,6 +139,11 @@ body {
     border-radius: 30px;
 }
 
+#profile-logo {
+    width: 75%;
+    height: 40%;
+}
+
 article {
 	margin: 0;
 	padding: 0;
