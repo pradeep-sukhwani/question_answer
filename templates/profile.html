@@ -1,0 +1,160 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block title %} Profile {% endblock %}
+
+{% block body %}
+    <br>
+    <div class="container bootstrap snippet">
+        <div class="row">
+            <div class="col-sm-3">
+                <form class="md-form" id="imageForm">
+                    <div class="file-field">
+                        <div class="mb-4">
+                            <img id="profile-logo"
+                                 src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'img/male-avatar.jpg' %}{% endif %}"
+                                 class="rounded-circle z-depth-1-half avatar-pic" alt="">
+                        </div>
+                    </div>
+                </form>
+
+                <ul class="list-group">
+                    <li class="list-group-item text-muted">Activity <i class="fa fa-dashboard fa-1x"></i></li>
+                    <li class="list-group-item text-right"><span
+                            class="pull-left"><strong>Questions Asked</strong></span> {{ user_question.count }}
+                    </li>
+                    <li class="list-group-item text-right"><span
+                            class="pull-left"><strong>Questions Answered</strong></span> {{ user_answer.count }}
+                    </li>
+                </ul>
+            </div>
+            <div class="col-sm-9">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="home">
+                        <hr>
+                        <form class="form" action="{% url 'api:profile' %}" method="post" id="profileForm">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <input type="hidden" class="form-control" name="user_id" value="{{ user.user.id }}{{ user.id }}">
+                            </div>
+                            <div class="form-group">
+                                <input type="hidden" class="form-control" name="profile_id" value="{{ user.id }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="first_name">First name</label>
+                                <input type="text" class="form-control" name="first_name" id="first_name"
+                                       placeholder="first name" value="{{ user.user.first_name }}">
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="last_name">Last name</label>
+                                    <input type="text" class="form-control" name="last_name" id="last_name"
+                                           placeholder="last name" value="{{ user.user.last_name }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="title">Title</label>
+                                    <input type="text" class="form-control" name="title" id="title"
+                                           placeholder="Title" value="{{ user.title }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="description">Description</label>
+                                    <textarea rows="8" class="form-control" id="description"
+                                              name="description">{{ user.description }}</textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="location">Location</label>
+                                    <input type="text" class="form-control" name="location" id="location"
+                                           placeholder="Location" value="{{ user.location }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="email">Email</label>
+                                    <input type="email" class="form-control" name="email" id="email"
+                                           placeholder="you@email.com" value="{{ user.user.email }} {{ user.email }}" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="twitter">Twitter</label>
+                                    <input type="text" class="form-control" name="twitter_username" id="twitter"
+                                           placeholder="Twitter Username" value="{{ user.twitter_username }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="github">GitHub</label>
+                                    <input type="text" class="form-control" name="github_username" id="github"
+                                           placeholder="Github Username" value="{{ user.github_username }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-6">
+                                    <label for="personal_website">Portfolio</label>
+                                    <input type="text" class="form-control" name="personal_website"
+                                           id="personal_website"
+                                           placeholder="Portfolio Link" value="{{ user.personal_website }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-12">
+                                    <br>
+                                    <button class="btn btn-lg btn-success" type="submit"><i
+                                            class="glyphicon glyphicon-ok-sign"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+    <script type="application/javascript">
+        $("#profileForm").validate({
+            errorClass: "my-error-class",
+            validClass: "my-valid-class",
+            rules: {
+                first_name: 'required',
+                last_name: 'required',
+                title: 'required',
+                description: 'required',
+            },
+            messages: {
+                first_name: 'Enter First Name',
+                last_name: 'Enter Last Name',
+                title: 'Enter Title',
+                description: 'Enter Description',
+            },
+            submitHandler: function(form, event) {
+                $.ajax({
+                    url: form.action,
+                    type: "POST",
+                    data: $(form).serialize(),
+                    async: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $.toaster({ priority : 'success', title : 'Question', message : response.reason});
+                            window.setTimeout(function(){location.reload()}, 1000)
+                        } else {
+                            $.toaster({ priority : 'success', title : 'Question', message : response.reason});
+                        }
+                        event.preventDefault();
+                    }, error: function (response) {
+                        $.toaster({ priority : 'info', title : 'Question', message : JSON.parse(response.responseText).non_field_errors});
+                    }
+                });
+                return false;
+            }
+        });
+    </script>
+{% endblock %}
+

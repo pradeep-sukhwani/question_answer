@@ -8,10 +8,13 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css">
+
 
     <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/jquery.validate.min.js' %}"></script>
     <script src="{% static 'js/jquery.toaster.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
             integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
             crossorigin="anonymous"></script>
@@ -27,21 +30,23 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
-                <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
-                    <li><a class="nav-link" href="{% url 'api:page' %}?addNQ=true">Add a New Question</a></li>
-                </ul>
+                    <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                        {% if user.user.is_authenticated or user.is_authenticated %}
+                            <li><a class="nav-link" href="{% url 'api:page' %}?addQuestion=true">Add a New Question</a></li>
+                        {% endif %}
+                    </ul>
 
                 <form id="searchForm" class="form-inline my-4 my-lg-0">
                     <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
                 </form>
-                {% if user.user.is_authenticated %}
+                {% if user.user.is_authenticated or user.is_authenticated %}
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" id="navDropDownLink" data-toggle="dropdown"
-                               aria-haspopup="true" aria-expanded="false"><img src="{{ user.avatar.url }}" id="profile-img">  <span>{{ user.user.username }}</span></a>
+                            <a href="#" class="nav-link" id="navDropDownLink" data-toggle="dropdown"
+                               aria-haspopup="true" aria-expanded="false"><img src="{% if user.avatar %}{{ user.avatar.url }} {% else %}{% static 'img/male-avatar.jpg' %}{% endif %}" id="profile-img">  <span>{{ user.user.username }}</span></a>
                             <div class="dropdown-menu" aria-labelledby="navDropDownLink">
-                                <a class="dropdown-item" href="#">Profile</a>
+                                <a class="dropdown-item" href="{% url 'api:page' %}?profile=true">Profile</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{% url 'api:user-logout' %}">Logout</a>
                             </div>
