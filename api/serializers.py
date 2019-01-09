@@ -126,7 +126,10 @@ class QuestionSerializer(serializers.Serializer):
             tags = None
         profile_id = validated_data.pop('profile_id')
         question = Question.objects.create(**validated_data)
-        question.asked_by = Profile.objects.get(id=profile_id)
+        profile_instance = Profile.objects.get(id=profile_id)
+        question.asked_by = profile_instance
+        profile_instance.reputation += 1
+        profile_instance.save()
         question.save()
         if tags:
             for item in tags:
@@ -283,9 +286,9 @@ class AnswerSerializer(serializers.Serializer):
         if validated_data.get('favourite'):
             instance.favourite += 1
         if validated_data.get('answer_upvote'):
-            question_instance = Question.objects.get(id=validated_data.get('question_id'))
-            question_instance.reputation += 1
-            question_instance.save()
+            profile_instance = Profile.objects.get(id=validated_data.get('profile_id'))
+            profile_instance.reputation += 1
+            profile_instance.save()
             instance.upvote += 1
         if validated_data.get('answer_downvote'):
             instance.downvote += 1
