@@ -3,16 +3,14 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
 from rest_framework import status
-from rest_framework.generics import GenericAPIView
 from django.contrib.auth import get_user_model, logout
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import login
-from rest_framework.viewsets import ModelViewSet
-
-from api.serializers import ProfileSerializer, UserRegistrationSerializer, UserLoginSerializer, QuestionSerializer
-from core.models import Profile, Question
+from api.serializers import ProfileSerializer, UserRegistrationSerializer, UserLoginSerializer, QuestionSerializer,\
+    AnswerSerializer
+from core.models import Profile, Question, Answer, Tag
 
 User = get_user_model()
 
@@ -28,11 +26,13 @@ class UserRegistrationViewSet(APIView):
             Email address
             user id
     """
+    serializer_class = UserRegistrationSerializer
+    querset = User.objects.filter(is_active=True)
 
     def post(self, request, format=None):
-        serializer = UserRegistrationSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            user = User.objects.get(username=serializer.validated_data.get('user_username'))
+            user = self.querset.objects.get(username=serializer.validated_data.get('user_username'))
             login(request, user)
             return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -49,11 +49,13 @@ class UserLoginViewSet(APIView):
             username
             user id
     """
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = UserLoginSerializer
 
     def post(self, request, format=None):
-        serializer = UserLoginSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user = User.objects.get(id=serializer.validated_data.get('user_id'))
+            user = self.queryset.get(id=serializer.validated_data.get('user_id'))
             login(request, user)
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -74,11 +76,24 @@ class PageViewSet(TemplateView):
     This viewset is for the homepage. It checks whether the user is logged or not
     and based on that it selects the template
     """
+    template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
+        data = {'questions': Question.objects.all(), 'tags': Tag.objects.all()}
         if self.request.user.is_authenticated:
-            kwargs.update({'user': Profile.objects.get(user=self.request.user)})
-        kwargs.update({'questions': Question.objects.all()})
+            if self.request.GET.get('addQuestion'):
+                self.template_name = 'add_new_question.html'
+            if self.request.GET.get('profile'):
+                self.template_name = 'profile.html'
+            profile = Profile.objects.filter(user=self.request.user)
+            if profile:
+                profile = profile.first()
+                data.update({'user': profile, 'user_question': data['questions'].filter(asked_by=profile),
+                             'user_answer': Answer.objects.filter(answer_by=profile)})
+        else:
+            if self.request.GET.get('login-signup'):
+                self.template_name = 'login_registration.html'
+        kwargs.update(data)
         return kwargs
 
     def render_to_response(self, context, **response_kwargs):
@@ -89,12 +104,6 @@ class PageViewSet(TemplateView):
         Pass response_kwargs to the constructor of the response class.
         """
         response_kwargs.setdefault('content_type', self.content_type)
-        if self.request.GET.get('addNQ'):
-            self.template_name = 'add_new_question.html'
-        if self.request.GET.get('login-signup'):
-            self.template_name = 'login_registration.html'
-        else:
-            self.template_name = 'home.html'
         return self.response_class(
             request=self.request,
             template=self.get_template_names(),
@@ -108,20 +117,34 @@ class QuestionViewSet(APIView):
     """
     This view set is for to add a new question or edit an existing question
     """
-    permission_classes = (IsAuthenticated, )
+    serializer_class = QuestionSerializer
     queryset = Question.objects.all()
 
     def post(self, request, format=None):
-        serializer = QuestionSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+            return Response(serializer.validated_data, status=serializer.validated_data.get('status'))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, format=None):
-        instance = self.queryset.get(id=request.data.get('id'))
-        serializer = QuestionSerializer(instance=instance, data=request.data)
+
+class AnswerViewSet(APIView):
+    """
+    This viewset will let user to do create,
+    update profile
+
+    Models:
+    Profile
+    """
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
+    permission_classes = (IsAuthenticated, )
+
+    def post(self, request, format=None):
+        data = request.data
+        data.update({'user': request.user})
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+            return Response(serializer.validated_data, status=serializer.validated_data.get('status'))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -135,19 +158,11 @@ class ProfileViewSet(APIView):
     """
     queryset = Profile.objects.filter(user__is_active=True)
     serializer_class = ProfileSerializer
-    permission_classes = (IsAuthenticated, )
 
     def post(self, request, format=None):
-        data = request.data
+        data = request.data.dict()
         data.update({'user': request.user})
-        serializer = ProfileSerializer(data=data)
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, format=None):
-        instance = self.queryset.get(id=request.data.get('id'))
-        serializer = ProfileSerializer(instance=instance, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+            return Response(serializer.validated_data, status=serializer.validated_data.get('status'))
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.db.models import Q
-from rest_framework import serializers
-from core.models import Profile, Question
+from rest_framework import serializers, status
+from core.models import Profile, Question, Answer
 from rest_framework.authtoken.models import Token
 
 User = get_user_model()
@@ -9,7 +9,7 @@ User = get_user_model()
 
 class UserRegistrationSerializer(serializers.Serializer):
     """
-    **User Serilizer**
+    **User Registeration Serilizer**
         Serialize Profile model
 
         **list fields:**
@@ -47,7 +47,7 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    **User Serilizer**
+    **User Login Serilizer**
         Fields:
         email
         password
@@ -70,8 +70,10 @@ class UserLoginSerializer(serializers.Serializer):
 
 class QuestionSerializer(serializers.Serializer):
     """
-    **User Serilizer**
+    **Question Serilizer**
         Serialize Question model
+
+        Create/update the question object
 
         **fields:**
         user - OneToOneField
@@ -82,30 +84,39 @@ class QuestionSerializer(serializers.Serializer):
     """
     title = serializers.CharField(required=True)
     question = serializers.CharField(required=True)
-    tag = serializers.CharField()
-    id = serializers.CharField()
-    rating = serializers.IntegerField()
+    tag = serializers.CharField(required=False)
+    id = serializers.CharField(required=False)
+    up_vote = serializers.IntegerField(required=False)
+    down_vote = serializers.IntegerField(required=False)
+    profile_id = serializers.CharField(required=True)
 
     class Meta:
         model = Question
-        fields = ('id', 'title', 'question', 'tag', 'rating',)
+        fields = ('title', 'question')
 
     def validate(self, attrs):
         question_id = attrs.get('id')
         title = attrs.get('title')
         question = attrs.get('question')
+        profile_id = attrs.get('profile_id')
 
+        if not profile_id:
+            raise serializers.ValidationError("Need Profile")
+        else:
+            profile = Profile.objects.filter(id=profile_id)
+            if not profile:
+                raise serializers.ValidationError("Profile id doesn't match")
         if question_id:
             instance = Question.objects.filter(id=question_id)
             if instance:
-                self.update(instance, attrs)
+                return self.update(instance.first(), attrs)
             else:
-                serializers.ValidationError('This question doesn\'t exist.')
+                raise serializers.ValidationError('This question doesn\'t exist.')
         else:
             if title and question:
                 return self.create(attrs)
             else:
-                serializers.ValidationError('Need Question and title')
+                raise serializers.ValidationError('Need Question and title')
 
     def create(self, validated_data):
         # Let's first remove the tag so that we can add it after creating the question object
@@ -113,28 +124,36 @@ class QuestionSerializer(serializers.Serializer):
             tags = validated_data.pop('tag')
         except:
             tags = None
+        profile_id = validated_data.pop('profile_id')
         question = Question.objects.create(**validated_data)
+        question.asked_by = Profile.objects.get(id=profile_id)
+        question.save()
         if tags:
             for item in tags:
                 question.tag.add(item)
-        return {'reason': 'Successfully added question', 'success': True}
+        return {'reason': 'Successfully added question', 'success': True, 'status': status.HTTP_201_CREATED}
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title')
         instance.question = validated_data.get('question')
-        if validated_data.get('rating'):
-            instance.rating += 1
+        if validated_data.get('question_upvote'):
+            instance.upvote += 1
+        if validated_data.get('question_downvote'):
+            instance.downvote += 1
         instance.save()
         tags = validated_data.get('tag')
-        for item in tags:
-            instance.tag.add(item)
-        return {'reason': 'Successfully updated question', 'success': True}
+        if tags:
+            for item in tags:
+                instance.tag.add(item)
+        return {'reason': 'Successfully updated question', 'success': True, 'status': status.HTTP_200_OK}
 
 
-class ProfileSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.Serializer):
     """
     **User Serilizer**
         Serialize Profile model
+
+        Create/update the profile
 
         **fields:**
         user - OneToOneField
@@ -146,13 +165,15 @@ class ProfileSerializer(serializers.ModelSerializer):
         github_username - CharField
     """
     location = serializers.CharField()
-    user_title = serializers.CharField(required=True)
-    id = serializers.CharField()
+    title = serializers.CharField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    profile_id = serializers.CharField(required=False)
     description = serializers.CharField(required=True)
-    personal_website = serializers.CharField()
-    twitter_username = serializers.CharField()
-    github_username = serializers.CharField()
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    personal_website = serializers.CharField(required=False)
+    twitter_username = serializers.CharField(required=False)
+    github_username = serializers.CharField(required=False)
+    user_id = serializers.CharField(required=True)
 
     class Meta:
         model = Profile
@@ -160,22 +181,27 @@ class ProfileSerializer(serializers.ModelSerializer):
                   'github_username',)
 
     def validate(self, attrs):
-        profile_id = attrs.get('id')
-        user_title = attrs.get('user_title')
+        profile_id = attrs.get('profile_id')
+        title = attrs.get('title')
         description = attrs.get('description')
 
-        if user_title and description:
+        if title and description:
             instance = Profile.objects.filter(id=profile_id)
             if instance:
-                self.update(instance, attrs)
+                return self.update(instance.first(), attrs)
             else:
-                self.create(attrs)
+                return self.create(attrs)
         else:
-            serializers.ValidationError('Need title and description')
+            raise serializers.ValidationError('Need title and description')
 
     def create(self, validated_data):
+        user = User.objects.get(id=self.initial_data.get('user').id)
+        user.first_name = validated_data.pop('first_name')
+        user.last_name = validated_data.pop('last_name')
+        user.save()
+        validated_data.pop('profile_id')
         Profile.objects.create(**validated_data)
-        return {'reason': 'Successfully added profile', 'success': True}
+        return {'reason': 'Successfully added profile', 'success': True, 'status': status.HTTP_201_CREATED}
 
     def update(self, instance, validated_data):
         instance.location = validated_data.get('location')
@@ -186,4 +212,82 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.twitter_username = validated_data.get('twitter_username')
         instance.title = validated_data.get('title')
         instance.save()
-        return {'reason': 'Successfully updated profile', 'success': True}
+        return {'reason': 'Successfully updated profile', 'success': True, 'status': status.HTTP_200_OK}
+
+
+class AnswerSerializer(serializers.Serializer):
+    """
+    **Answer Serilizer**
+        Serialize Answer model
+
+        It creates the answer object and assign to the relevant question object. Or if the answer is a reply
+        to a particular answer then it assigns that answer to the parent answer object
+        It updates the answer object - Up vote, down vote, favourite
+        With every up vote - it increases the question reputation by 1 point.
+
+        **fields:**
+        answer - CharField
+        parent - ForeignKey to self
+        answer_by - OneToOneField to Profile
+        Upvote - IntegerField
+        down vote - IntegerField
+        accepted_or_not - BooleanField
+        favourite - IntegerField
+    """
+    answer = serializers.CharField(required=True)
+    parent = serializers.CharField(required=False)
+    answer_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    accepted_or_not = serializers.BooleanField(required=False)
+    favourite = serializers.IntegerField(required=True)
+    question = serializers.CharField(required=True)
+    up_vote = serializers.IntegerField(required=False)
+    down_vote = serializers.IntegerField(required=False)
+    answer_id = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        question_id = attrs.get('question_id')
+        profile_id = attrs.get('profile_id')
+        answer_id = attrs.get('answer_id')
+        answer = attrs.get('answer')
+
+        if answer and question_id:
+            profile_instance = Profile.objects.filter(id=profile_id)
+            question_instance = Question.objects.filter(id=question_id)
+            if profile_instance and question_instance:
+                if answer_id:
+                    answer_instance = Answer.objects.filter(id=answer_id)
+                    if answer:
+                        return self.update(answer_instance.first(), attrs)
+                else:
+                    return self.create(attrs)
+            else:
+                raise serializers.ValidationError('User Profile/Question does not exist')
+        else:
+            raise serializers.ValidationError('Need Answer')
+
+    def create(self, validated_data):
+        try:
+            parent_answer_id = validated_data.pop('parent')
+            parent_answer = Answer.objects.get(id=parent_answer_id)
+        except:
+            parent_answer = None
+        answer = Answer.objects.create(**validated_data)
+        if parent_answer:
+            answer.parent = parent_answer
+            answer.save()
+        return {'reason': 'Successfully added Answer', 'success': True, 'status': status.HTTP_201_CREATED}
+
+    def update(self, instance, validated_data):
+        if validated_data.get('accepted_or_not'):
+            instance.accepted_or_not = True
+        if validated_data.get('favourite'):
+            instance.favourite += 1
+        if validated_data.get('answer_upvote'):
+            question_instance = Question.objects.get(id=validated_data.get('question_id'))
+            question_instance.reputation += 1
+            question_instance.save()
+            instance.upvote += 1
+        if validated_data.get('answer_downvote'):
+            instance.downvote += 1
+        instance.save()
+        return {'reason': 'Successfully updated profile', 'success': True, 'status': status.HTTP_200_OK}
