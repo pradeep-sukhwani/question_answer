@@ -11,7 +11,6 @@ class Question(TimeStampedModel):
     asked_by = models.ForeignKey("Profile", on_delete=models.SET_NULL, null=True, related_name='question_asked_by')
     up_vote = models.IntegerField("Up-vote", default=0)
     down_vote = models.IntegerField("Up-vote", default=0)
-    reputation = models.IntegerField("Reputation", default=1)
 
     def __str__(self):
         return 'u{id}_{title}'.format(id=self.id, title=self.title)

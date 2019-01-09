@@ -20,6 +20,7 @@ class Profile(models.Model):
     twitter_username = models.CharField(max_length=100, null=True, blank=True, help_text='Twitter username')
     github_username = models.CharField(max_length=100, null=True, blank=True, help_text='Github username')
     avatar = models.ImageField(upload_to=get_upload_path, null=True, blank=True, help_text='User\'s profile pic')
+    reputation = models.IntegerField("Reputation", default=0)
 
     class Meta:
         verbose_name_plural = 'Profile'
