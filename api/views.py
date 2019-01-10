@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -79,16 +80,36 @@ class PageViewSet(TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
-        data = {'questions': Question.objects.all(), 'tags': Tag.objects.all()}
+        question = Question.objects.all()
+        data = {'tags': Tag.objects.all(), 'questions': question}
+        if self.request.GET.get('search_text'):
+            data.update({'questions': question.filter(Q(title__icontains=self.request.GET.get('search_text')) |
+                                                      Q(tag__in=data['tags'].filter(name__icontains=self.request.GET.get('search_text')))).distinct()
+                         })
+        if self.request.GET.get('question_thread_id'):
+            try:
+                answer = Answer.objects.get(accepted_or_not=True,
+                                            question_answer__id=self.request.GET.get('question_thread_id'))
+            except Answer.DoesNotExist:
+                answer = None
+            data.update({'question': question.get(id=self.request.GET.get('question_thread_id')),
+                         'accepted': answer})
+            self.template_name = 'question_answer_thread.html'
+        if self.request.GET.get('question_id'):
+            self.template_name = 'question.html'
+            data.update({'question': Question.objects.get(id=self.request.GET.get('question_id'))})
+        if self.request.GET.get('question_id'):
+            self.template_name = 'question.html'
+            data.update({'question': Question.objects.get(id=self.request.GET.get('question_id'))})
+        if self.request.GET.get('question'):
+            self.template_name = 'question.html'
         if self.request.user.is_authenticated:
-            if self.request.GET.get('addQuestion'):
-                self.template_name = 'add_new_question.html'
             if self.request.GET.get('profile'):
                 self.template_name = 'profile.html'
             profile = Profile.objects.filter(user=self.request.user)
             if profile:
                 profile = profile.first()
-                data.update({'user': profile, 'user_question': data['questions'].filter(asked_by=profile),
+                data.update({'user': profile, 'user_question': question.filter(asked_by=profile),
                              'user_answer': Answer.objects.filter(answer_by=profile)})
         else:
             if self.request.GET.get('login-signup'):
@@ -137,10 +158,9 @@ class AnswerViewSet(APIView):
     """
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
-    permission_classes = (IsAuthenticated, )
 
     def post(self, request, format=None):
-        data = request.data
+        data = request.data.dict()
         data.update({'user': request.user})
         serializer = self.serializer_class(data=data)
         if serializer.is_valid(raise_exception=True):
