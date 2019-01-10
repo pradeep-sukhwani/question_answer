@@ -82,9 +82,9 @@ class PageViewSet(TemplateView):
     def get_context_data(self, **kwargs):
         question = Question.objects.all()
         data = {'tags': Tag.objects.all(), 'questions': question}
-        if self.request.GET.get('search_text'):
-            data.update({'questions': question.filter(Q(title__icontains=self.request.GET.get('search_text')) |
-                                                      Q(tag__in=data['tags'].filter(name__icontains=self.request.GET.get('search_text')))).distinct()
+        if self.request.GET.get('searchText'):
+            data.update({'questions': question.filter(Q(title__icontains=self.request.GET.get('searchText')) |
+                                                      Q(tag__in=data['tags'].filter(name__icontains=self.request.GET.get('searchText')))).distinct()
                          })
         if self.request.GET.get('question_thread_id'):
             try:

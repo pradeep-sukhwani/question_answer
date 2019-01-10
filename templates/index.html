@@ -38,8 +38,8 @@
                     </ul>
 
                 <form id="searchForm" class="form-inline my-4 my-lg-0">
-                    <input name="searchText" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                    <a href="{% url 'api:profile' %}?search_text=" class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</a>
+                    <input name="searchText" class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+                    <button type="submit" href="{% url 'api:profile' %}?search_text=" class="btn btn-outline-success my-2 my-sm-0">Search</button>
                 </form>
                 {% if user.user.is_authenticated or user.is_authenticated %}
                     <ul class="navbar-nav">
@@ -76,5 +76,28 @@
     <p class="mt-5 mb-3 text-muted" style="text-align: center;">Source Code - <a
         href="https://github.com/pssukhwani/todo_list" target="_blank">GitHub</a></p>
     {% block js %}{% endblock %}
+    <script type="application/javascript">
+        $("#searchForm").validate({
+            submitHandler: function(form) {
+                var searchText = $("input[name=searchText]").val();
+                if (!searchText){
+                    alert('Pretty sure we can\'t look an empty value!');
+                    return false;
+                }
+                $.ajax({
+                    url: form.action,
+                    data: $(form).serialize(),
+                    async: false,
+                    success: function (response) {
+                        if (response) {
+                            $('body').html(response);
+                        }
+                    }, error: function (response) {
+                        $.toaster({ priority : 'info', title : 'Login', message : JSON.parse(response.responseText).non_field_errors[0]});
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
