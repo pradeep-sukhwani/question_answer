@@ -1,0 +1,156 @@
+{% extends 'index.html' %}
+
+{% block title %}
+    Question/Answer Thread
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row">
+            <div class="jumbotron">
+                <h3>{{ question.title }}</h3>
+                <p>{{ question.question }}</p>
+                <footer class="blockquote-footer">{{ question.asked_by.user.username }}
+                    at {{ question.created }}</footer>
+                <br>
+                <form id="questionActivitesForm" method="post" action="{% url 'api:question' %}">
+                    <input type="hidden" name="question" value="{{ question.question }}">
+                    <input type="hidden" name="profile_id" value="{{ user.id }}">
+                    <input type="hidden" name="id" value="{{ question.id }}">
+                    <input type="hidden" name="title" value="{{ question.title }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="question_id" value="{{ question.id }}">
+                    <input type="hidden" name="profile_id" value="{{ user.id }}">
+                    {% if user.user.is_authenticated and question.asked_by.id != user.id %}
+                        <button class="btn btn-primary" name="up_vote" value="True"><i class="fa fa-caret-up" style="font-size:20px"></i></button>
+                        {{ question.up_vote }}
+                        <button class="btn btn-primary" name="down_vote" value="True"><i class="fa fa-caret-down" style="font-size:20px"></i></button>
+                        {{ question.down_vote }}
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+            <h2>Replies</h2>
+            {% for answer_object in question.answer.all %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <p title="question">{{ answer_object.answer }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <footer class="blockquote-footer">{{ answer_object.answer_by.user.username }}
+                            at {{ answer_object.created }}</footer>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <form id="answerActivitiesForm" method="post" action="{% url 'api:answer' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="answer" value="{{ answer_object.answer }}">
+                            <input type="hidden" name="question_id" value="{{ question.id }}">
+                            <input type="hidden" name="answer_id" value="{{ answer_object.id }}">
+                            <input type="hidden" name="profile_id" value="{{ user.user.id }}">
+                            {% if question.asked_by.id == user.id and accepted and accepted.id == answer_object.id or not accepted %}
+                                <button class="btn btn-primary" name="accepted_or_not" value="True" {% if answer_object.accepted_or_not %}disabled{% endif %}><i class="fa fa-check" style="font-size:20px; color: green;"></i></button>
+                            {% endif %}
+                            <button class="btn btn-primary" name="favourite" value="True"><i class="fa fa-star" style="font-size:20px"></i></button>
+                            {{ answer_object.favourite }}
+                            <button class="btn btn-primary" name="up_vote" value="True"><i class="fa fa-caret-up" style="font-size:20px"></i></button>
+                            {{ answer_object.up_vote }}
+                            <button class="btn btn-primary" name="down_vote" value="True"><i class="fa fa-caret-down" style="font-size:20px"></i></button>
+                            {{ answer_object.down_vote }}
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% if user.user.is_authenticated %}
+            <form id="answerTextForm" method="post" action="{% url 'api:answer' %}">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <input type="hidden" name="profile_id" value="{{ user.user.id }}">
+                <div class="form-group">
+                    <textarea rows="5" name="answer" style="width: 50%" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script type="application/javascript">
+        $("#answerTextForm").validate({
+            errorClass: "my-error-class",
+            validClass: "my-valid-class",
+            rules: {
+                answer: "required",
+            },
+            messages: {
+                answer: 'Answer box is empty',
+            },
+            submitHandler: function (event) {
+                var form = $(this);
+                $.ajax({
+                    url: form.action,
+                    type: "POST",
+                    data: $(form).serialize(),
+                    async: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $.toaster({priority: 'success', title: 'Answer', message: response.reason});
+                            window.setTimeout(function () {
+                                location.reload()
+                            }, 1000)
+                        } else {
+                            $.toaster({priority: 'success', title: 'Answer', message: response.reason});
+                        }
+                        event.preventDefault();
+                    }, error: function (response) {
+                        $.toaster({
+                            priority: 'info',
+                            title: 'Answer',
+                            message: JSON.parse(response.responseText).non_field_errors
+                        });
+                    }
+                });
+                return false;
+            }
+        });
+        $("#answerActivitiesForm").validate({
+            submitHandler: function (form, event) {
+                $.ajax({
+                    url: form.action,
+                    type: "POST",
+                    data: $(form).serialize(),
+                    async: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $.toaster({priority: 'success', title: 'Question/Answer', message: response.reason});
+                            window.setTimeout(function () {
+                                location.reload()
+                            }, 500);
+                        } else {
+                            $.toaster({priority: 'success', title: 'Question/Answer', message: response.reason});
+                        }
+                        event.preventDefault();
+                    }, error: function (response) {
+                        $.toaster({
+                            priority: 'info',
+                            title: 'Answer',
+                            message: JSON.parse(response.responseText).non_field_errors
+                        });
+                    }
+                });
+                return false;
+            }
+        });
+    </script>
+{% endblock %}

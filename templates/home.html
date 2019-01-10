@@ -3,14 +3,37 @@
 
 {% block body %}
     <div class="container">
-        {% for question in questions %}
-            <div class="row">
-                <div class="col col-md-6">
-                    {{ question.title }}
-                    {{ question.question }}
-                </div>
-            </div>
-        {% endfor %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Question</th>
+                    <th>Up vote</th>
+                    <th>Down vote</th>
+                    <th>Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question in questions %}
+                    <tr>
+                        <td>{{ question.title|truncatewords:4 }}</td>
+                        <td>{{ question.question|truncatewords:4 }}</td>
+                        <td>{{ question.up_vote }}</td>
+                        <td>{{ question.down_vote }}</td>
+                        <td>
+                            <a href="{% url 'api:page' %}?question_thread_id={{ question.id }}">
+                                <i class="fa fa-info-circle" aria-hidden="true"></i>
+                            </a>
+                            {% if user.user.is_authenticated and question.asked_by.id == user.id %}
+                                <a href="{% url 'api:page' %}?question_id={{ question.id }}">
+                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 {% endblock %}

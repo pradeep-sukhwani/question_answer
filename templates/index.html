@@ -21,7 +21,8 @@
     {% block css %}
     {% endblock %}
 </head>
-<body>
+<body onbeforeunload="checkProfile();">
+    <input type="hidden" class="form-control" name="profile_id" id="profile_id" value="{{ user.id }}">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="{% url 'api:page' %}"><img id="brand" src="{% static 'img/logo.jpg' %}"></a>
         <div class="container">
@@ -32,13 +33,13 @@
             <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
                     <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
                         {% if user.user.is_authenticated or user.is_authenticated %}
-                            <li><a class="nav-link" href="{% url 'api:page' %}?addQuestion=true">Add a New Question</a></li>
+                            <li><a class="nav-link" href="{% url 'api:page' %}?question=true">Add a New Question</a></li>
                         {% endif %}
                     </ul>
 
                 <form id="searchForm" class="form-inline my-4 my-lg-0">
-                    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                    <input name="searchText" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                    <a href="{% url 'api:profile' %}?search_text=" class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</a>
                 </form>
                 {% if user.user.is_authenticated or user.is_authenticated %}
                     <ul class="navbar-nav">
@@ -60,9 +61,20 @@
             </div>
         </div>
     </nav>
-{% block body %}{% endblock %}
-<p class="mt-5 mb-3 text-muted" style="text-align: center;">Source Code - <a
+    <script type="application/javascript">
+        function checkProfile() {
+            var profileId = $("#profile_id").val();
+            if(!profileId){
+                $.toaster({ priority : 'info', title : 'Profile', message : "Save your profile details first"});
+                return false
+            }
+        }
+    </script>
+    <hr>
+    {% block body %}{% endblock %}
+    <hr>
+    <p class="mt-5 mb-3 text-muted" style="text-align: center;">Source Code - <a
         href="https://github.com/pssukhwani/todo_list" target="_blank">GitHub</a></p>
-{% block js %}{% endblock %}
+    {% block js %}{% endblock %}
 </body>
 </html>
